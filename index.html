@@ -801,12 +801,6 @@
 
     let localStore = JSON.parse(localStorage.getItem('creatorhub_store') || JSON.stringify(defaultData));
 
-    // Force refresh videos if older store with duplicate videos exists
-    if (!localStore.videos || localStore.videos.length < 6) {
-      localStore.videos = defaultData.videos;
-      localStorage.setItem('creatorhub_store', JSON.stringify(localStore));
-    }
-
     function saveStore() {
       localStorage.setItem('creatorhub_store', JSON.stringify(localStore));
     }
@@ -841,6 +835,7 @@
     let isMicMuted = false;
     let isCamOff = false;
     let currentPhotoZoom = 1.0;
+    let activeLocalObjectUrls = {};
 
     document.addEventListener('DOMContentLoaded', () => {
       bindNavEvents();
@@ -1031,7 +1026,10 @@
 
     function playVideoById(vidId) {
       const vid = localStore.videos.find(v => v.id === vidId);
-      const rawUrl = vid ? vid.videoUrl : '';
+      let rawUrl = vid ? vid.videoUrl : '';
+      if (activeLocalObjectUrls[vidId]) {
+        rawUrl = activeLocalObjectUrls[vidId];
+      }
       openFullscreenMedia('video', vid ? vid.title : 'Video Playback', rawUrl);
     }
 
@@ -1087,15 +1085,14 @@
         if (zoomBar) zoomBar.style.display = 'none';
         let playUrl = url;
         
-        // If playUrl is missing or invalid, pick a random video from the video pool
-        if (!playUrl || playUrl.trim() === '' || playUrl.includes('unsplash')) {
+        if (!playUrl || playUrl.trim() === '') {
           playUrl = sampleVideoPool[Math.floor(Math.random() * sampleVideoPool.length)];
         }
 
         wrapper.innerHTML = `
           <div style="position: relative; width: 92vw; max-width: 800px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
             <video id="activeFullscreenVideo" controls playsinline preload="auto" style="width: 100%; max-height: 75vh; border-radius: 12px; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
-              <source src="${playUrl}" type="video/mp4">
+              <source src="${playUrl}">
               Your browser does not support HTML5 video playback.
             </video>
             <button id="btnPlayVideoNow" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem; border-radius: 30px; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6);">
@@ -1301,28 +1298,55 @@
             saveSamplePhoto(title);
           }
         } else {
-          let vidUrl = sampleVideoPool[Math.floor(Math.random() * sampleVideoPool.length)];
+          const newVidId = 'vid-' + Date.now();
           if (file) {
-            vidUrl = URL.createObjectURL(file);
+            // Local file object URL for instant 100% playback of user's EXACT local video file
+            const objectUrl = URL.createObjectURL(file);
+            activeLocalObjectUrls[newVidId] = objectUrl;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              const videoRecord = {
+                id: newVidId,
+                title: title || file.name || 'Uploaded Video',
+                subtitle: '100 views • Just now',
+                thumbnail: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=400&q=80',
+                videoUrl: evt.target.result, // Permanent Base64 Data URL of USER'S video!
+                language: document.getElementById('uploadLanguageSelect').value || 'English',
+                langCode: 'EN',
+                category: 'Vlogs',
+                publishedDate: 'Just now',
+                views: 100,
+                earnings: 0.50,
+                visibility: 'Public'
+              };
+              localStore.videos.unshift(videoRecord);
+              saveStore();
+              if (isFirebaseLive && db) db.collection('videos').add(videoRecord).catch(err => console.error("Cloud sync:", err));
+              switchView('overview');
+            };
+            reader.readAsDataURL(file);
+          } else {
+            const randomSampleUrl = sampleVideoPool[Math.floor(Math.random() * sampleVideoPool.length)];
+            const videoRecord = {
+              id: newVidId,
+              title: title || 'Uploaded Video',
+              subtitle: '100 views • Just now',
+              thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
+              videoUrl: randomSampleUrl,
+              language: document.getElementById('uploadLanguageSelect').value || 'English',
+              langCode: 'EN',
+              category: 'Vlogs',
+              publishedDate: 'Just now',
+              views: 100,
+              earnings: 0.50,
+              visibility: 'Public'
+            };
+            localStore.videos.unshift(videoRecord);
+            saveStore();
+            if (isFirebaseLive && db) db.collection('videos').add(videoRecord).catch(err => console.error("Cloud sync:", err));
+            switchView('overview');
           }
-          const videoRecord = {
-            id: 'vid-' + Date.now(),
-            title: title || 'Uploaded Video',
-            subtitle: '100 views • Just now',
-            thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
-            videoUrl: vidUrl,
-            language: document.getElementById('uploadLanguageSelect').value || 'English',
-            langCode: 'EN',
-            category: 'Vlogs',
-            publishedDate: 'Just now',
-            views: 100,
-            earnings: 0.50,
-            visibility: 'Public'
-          };
-          localStore.videos.unshift(videoRecord);
-          saveStore();
-          if (isFirebaseLive && db) db.collection('videos').add(videoRecord).catch(err => console.error("Cloud sync:", err));
-          switchView('overview');
         }
       };
     }
