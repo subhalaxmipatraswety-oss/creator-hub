@@ -398,12 +398,52 @@
       z-index: 1000001;
     }
 
-    .call-overlay { position: fixed; inset: 0; background: #090d16; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .call-video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 90%; max-width: 1000px; height: 60vh; }
-    .call-video-wrapper { background: #151c2e; border-radius: var(--radius-lg); overflow: hidden; position: relative; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; }
+    /* WebRTC 1-on-1 Call Overlay */
+    .call-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.95);
+      backdrop-filter: blur(15px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .call-container-box {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 850px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .call-video-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      height: 50vh;
+      min-height: 280px;
+    }
+    .call-video-wrapper {
+      background: #0f172a;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .call-video-wrapper video { width: 100%; height: 100%; object-fit: cover; }
-    .call-controls { margin-top: 30px; display: flex; align-items: center; gap: 16px; }
-    .btn-call-ctrl { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; background: rgba(255, 255, 255, 0.15); color: #fff; }
+    .call-controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .btn-call-ctrl { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 1.2rem; }
     .btn-call-ctrl.end-call { background: #ef4444; }
 
     /* Mobile Responsive Breakpoints */
@@ -427,6 +467,7 @@
       .page-title { font-size: 1.15rem; }
       .search-box input { width: 140px; }
       .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .call-video-grid { grid-template-columns: 1fr; height: 55vh; }
     }
 
     @media (max-width: 480px) {
@@ -573,8 +614,11 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Select File</label>
+          <label class="form-label">Select File (Photo from Mobile Gallery or Camera)</label>
           <input type="file" class="form-control" id="uploadFileInput" accept="image/*,video/*">
+          <div id="filePreviewBox" style="margin-top: 10px; display: none; text-align: center;">
+            <img id="filePreviewImg" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+          </div>
         </div>
         <button type="submit" class="btn btn-primary" id="btnSubmitUpload" style="width: 100%; margin-top: 10px;">Upload & Sync</button>
       </form>
@@ -609,21 +653,42 @@
     </div>
   </div>
 
+  <!-- WebRTC 1-on-1 Video & Voice Call Overlay -->
   <div class="call-overlay" id="callOverlay" style="display: none;">
-    <h2 id="callOverlayTitle" style="color: #fff; margin-bottom: 20px; font-weight: 800;">1-on-1 Video Call</h2>
-    <div class="call-video-grid">
-      <div class="call-video-wrapper">
-        <video id="localCallVideo" autoplay muted playsinline></video>
-        <span style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #fff;">You</span>
+    <div class="call-container-box">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h2 id="callOverlayTitle" style="color: #fff; font-weight: 800; font-size: 1.25rem;">Real-Time WebRTC Call</h2>
+        <button class="close-btn" onclick="closeCallOverlay()">&times;</button>
       </div>
-      <div class="call-video-wrapper">
-        <video id="remoteCallVideo" autoplay playsinline></video>
-        <span style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #fff;">Remote Peer</span>
+
+      <div style="font-size: 0.85rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 10px 14px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div>
+          Your Call ID: <span id="myPeerIdTxt" style="color: var(--accent-blue); font-weight: 800; background: rgba(59, 130, 246, 0.15); padding: 4px 10px; border-radius: 6px;">Generating ID...</span>
+        </div>
+        <button class="btn btn-secondary" id="btnCopyPeerId" style="padding: 4px 10px; font-size: 0.78rem;">📋 Copy ID</button>
       </div>
-    </div>
-    <div class="call-controls">
-      <button class="btn-call-ctrl" id="btnToggleMic" title="Mute/Unmute Mic">🎤</button>
-      <button class="btn-call-ctrl end-call" id="btnEndCall" title="End Call">📞</button>
+
+      <div id="callConnectBox" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="targetPeerIdInput" class="form-control" placeholder="Enter Friend's Call ID..." style="flex: 1; min-width: 200px;">
+        <button class="btn btn-primary" id="btnStartPeerCall">📞 Call Peer</button>
+      </div>
+
+      <div class="call-video-grid">
+        <div class="call-video-wrapper">
+          <video id="localCallVideo" autoplay muted playsinline></video>
+          <span style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #fff;">You (Local)</span>
+        </div>
+        <div class="call-video-wrapper">
+          <video id="remoteCallVideo" autoplay playsinline></video>
+          <span style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: #fff;">Remote Peer</span>
+        </div>
+      </div>
+
+      <div class="call-controls">
+        <button class="btn-call-ctrl" id="btnToggleMic" title="Mute/Unmute Mic">🎤</button>
+        <button class="btn-call-ctrl" id="btnToggleCam" title="Camera On/Off">📷</button>
+        <button class="btn-call-ctrl end-call" id="btnEndCall" title="End Call">📞</button>
+      </div>
     </div>
   </div>
 
@@ -648,6 +713,15 @@
     } catch (e) {
       console.warn("Firebase notice:", e.message);
     }
+
+    const samplePhotoPool = [
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80'
+    ];
 
     const defaultData = {
       user: { name: 'Sweety Creator', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', channelName: 'Sweety Studio' },
@@ -712,14 +786,49 @@
     }
 
     let currentViewName = 'overview';
+    let peer = null;
+    let myPeerId = null;
+    let localStream = null;
+    let currentCall = null;
+    let isMicMuted = false;
+    let isCamOff = false;
 
     document.addEventListener('DOMContentLoaded', () => {
       bindNavEvents();
       bindModals();
       bindGlobalPhotoClick();
       bindMobileDrawer();
+      initPeerJS();
       switchView('overview');
     });
+
+    function initPeerJS() {
+      try {
+        if (typeof Peer !== 'undefined') {
+          peer = new Peer('sweety-' + Math.floor(1000 + Math.random() * 9000));
+          peer.on('open', (id) => {
+            myPeerId = id;
+            const peerTxt = document.getElementById('myPeerIdTxt');
+            if (peerTxt) peerTxt.innerText = myPeerId;
+          });
+
+          peer.on('call', (call) => {
+            openCallOverlay(false);
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+              localStream = stream;
+              document.getElementById('localCallVideo').srcObject = stream;
+              call.answer(stream);
+              currentCall = call;
+              call.on('stream', (remoteStream) => {
+                document.getElementById('remoteCallVideo').srcObject = remoteStream;
+              });
+            }).catch(err => console.error("Mic/Cam access error:", err));
+          });
+        }
+      } catch (err) {
+        console.warn("PeerJS init error:", err);
+      }
+    }
 
     function bindMobileDrawer() {
       const btnMenu = document.getElementById('btnMobileMenu');
@@ -926,6 +1035,72 @@
       }
     }
 
+    function openCallOverlay(audioOnly) {
+      document.getElementById('callOverlay').style.display = 'flex';
+      document.getElementById('callOverlayTitle').innerText = audioOnly ? 'Voice Call' : 'Real-Time HD Video Call';
+
+      navigator.mediaDevices.getUserMedia({ video: !audioOnly, audio: true }).then((stream) => {
+        localStream = stream;
+        document.getElementById('localCallVideo').srcObject = stream;
+      }).catch(err => {
+        console.warn("Camera/Mic access error:", err);
+      });
+
+      document.getElementById('btnCopyPeerId').onclick = () => {
+        if (myPeerId) {
+          navigator.clipboard.writeText(myPeerId);
+          alert('Copied your Call ID: ' + myPeerId);
+        }
+      };
+
+      document.getElementById('btnStartPeerCall').onclick = () => {
+        const targetId = document.getElementById('targetPeerIdInput').value.trim();
+        if (targetId && peer && localStream) {
+          const call = peer.call(targetId, localStream);
+          currentCall = call;
+          call.on('stream', (remoteStream) => {
+            document.getElementById('remoteCallVideo').srcObject = remoteStream;
+          });
+        }
+      };
+
+      document.getElementById('btnToggleMic').onclick = () => {
+        if (localStream) {
+          const audioTrack = localStream.getAudioTracks()[0];
+          if (audioTrack) {
+            isMicMuted = !isMicMuted;
+            audioTrack.enabled = !isMicMuted;
+            document.getElementById('btnToggleMic').innerText = isMicMuted ? '🔇' : '🎤';
+          }
+        }
+      };
+
+      document.getElementById('btnToggleCam').onclick = () => {
+        if (localStream) {
+          const videoTrack = localStream.getVideoTracks()[0];
+          if (videoTrack) {
+            isCamOff = !isCamOff;
+            videoTrack.enabled = !isCamOff;
+            document.getElementById('btnToggleCam').innerText = isCamOff ? '🚫' : '📷';
+          }
+        }
+      };
+
+      document.getElementById('btnEndCall').onclick = closeCallOverlay;
+    }
+
+    function closeCallOverlay() {
+      document.getElementById('callOverlay').style.display = 'none';
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      if (currentCall) {
+        currentCall.close();
+        currentCall = null;
+      }
+    }
+
     function renderLanguagesView(container) { container.innerHTML = `<div class="content-card"><h2>Multi-Language Analytics</h2></div>`; }
     function renderCategoriesView(container) { container.innerHTML = `<div class="content-card"><h2>Content Categories</h2></div>`; }
     function renderEarningsView(container) { container.innerHTML = `<div class="content-card"><h2>Earnings & Revenue</h2></div>`; }
@@ -953,15 +1128,33 @@
 
       document.getElementById('btnFirebaseConfig').onclick = () => firebaseModal.classList.add('active');
 
+      const fileInput = document.getElementById('uploadFileInput');
+      const previewBox = document.getElementById('filePreviewBox');
+      const previewImg = document.getElementById('filePreviewImg');
+
+      fileInput.onchange = () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (file && file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            previewBox.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          previewBox.style.display = 'none';
+        }
+      };
+
       document.getElementById('uploadForm').onsubmit = (e) => {
         e.preventDefault();
         
         const type = document.getElementById('uploadTypeSelect').value;
         const title = document.getElementById('uploadTitleInput').value.trim();
-        const fileInput = document.getElementById('uploadFileInput');
         const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
 
         uploadModal.classList.remove('active');
+        previewBox.style.display = 'none';
 
         if (type === 'photo') {
           if (file) {
@@ -1003,9 +1196,6 @@
           }
         } else {
           let vidUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
-          if (file) {
-            vidUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
-          }
           const videoRecord = {
             id: 'vid-' + Date.now(),
             title: title || 'Uploaded Video',
@@ -1029,7 +1219,8 @@
     }
 
     function saveSamplePhoto(title) {
-      const photoRecord = { id: 'ph-' + Date.now(), title: title || 'Uploaded Photo', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80', uploadedAt: 'Just now' };
+      const randomPhotoUrl = samplePhotoPool[Math.floor(Math.random() * samplePhotoPool.length)];
+      const photoRecord = { id: 'ph-' + Date.now(), title: title || 'Uploaded Photo', url: randomPhotoUrl, uploadedAt: 'Just now' };
       localStore.photos.unshift(photoRecord);
       saveStore();
       if (isFirebaseLive && db) db.collection('photos').add(photoRecord).catch(err => console.error("Cloud sync:", err));
@@ -1040,8 +1231,6 @@
       document.getElementById('uploadTypeSelect').value = defaultType;
       document.getElementById('uploadModal').classList.add('active');
     }
-
-    function openCallOverlay(audioOnly) { document.getElementById('callOverlay').style.display = 'flex'; }
   </script>
 </body>
 </html>
