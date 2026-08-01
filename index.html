@@ -334,7 +334,7 @@
     .form-control { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: var(--radius-md); color: #fff; font-size: 0.88rem; outline: none; font-family: inherit; }
     .form-control:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); }
 
-    /* Absolute 100% Screen Window Viewer for Mobile & Desktop with Touch Zoom */
+    /* Absolute 100% Screen Window Viewer for Mobile & Desktop with Mouse Wheel Zoom */
     .fullscreen-photo-viewer {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -350,7 +350,6 @@
       pointer-events: none;
       transition: opacity 0.2s ease;
       overflow: hidden;
-      touch-action: manipulation;
     }
     .fullscreen-photo-viewer.active {
       opacity: 1;
@@ -363,7 +362,7 @@
       border-radius: 12px;
       box-shadow: 0 10px 50px rgba(0, 0, 0, 0.9);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+      transition: transform 0.15s ease-out;
       cursor: zoom-in;
     }
     .fullscreen-overlay-bar {
@@ -649,7 +648,7 @@
     </div>
   </div>
 
-  <!-- Full Screen Photo & Video Viewer Overlay with Interactive Zoom -->
+  <!-- Full Screen Photo & Video Viewer Overlay with Interactive PC & Mobile Zoom -->
   <div class="fullscreen-photo-viewer" id="fullscreenViewer">
     <button class="fullscreen-close-btn" id="btnCloseFullscreenViewer" title="Close Fullscreen">&times;</button>
     <div id="fullscreenMediaWrapper" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: auto;"></div>
@@ -818,16 +817,32 @@
       const btnIn = document.getElementById('btnZoomIn');
       const btnOut = document.getElementById('btnZoomOut');
       const btnReset = document.getElementById('btnResetZoom');
+      const wrapper = document.getElementById('fullscreenMediaWrapper');
 
       if (btnIn) btnIn.onclick = (e) => { e.stopPropagation(); applyPhotoZoom(0.3); };
       if (btnOut) btnOut.onclick = (e) => { e.stopPropagation(); applyPhotoZoom(-0.3); };
       if (btnReset) btnReset.onclick = (e) => { e.stopPropagation(); resetPhotoZoom(); };
+
+      // PC Mouse Wheel Zoom Listener
+      if (wrapper) {
+        wrapper.onwheel = (e) => {
+          const img = document.querySelector('#fullscreenMediaWrapper img');
+          if (img) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+              applyPhotoZoom(0.25); // Scroll Up = Zoom In
+            } else {
+              applyPhotoZoom(-0.25); // Scroll Down = Zoom Out
+            }
+          }
+        };
+      }
     }
 
     function applyPhotoZoom(delta) {
       const img = document.querySelector('#fullscreenMediaWrapper img');
       if (img) {
-        currentPhotoZoom = Math.min(Math.max(0.5, currentPhotoZoom + delta), 4.0);
+        currentPhotoZoom = Math.min(Math.max(0.5, currentPhotoZoom + delta), 4.5);
         img.style.transform = `scale(${currentPhotoZoom})`;
       }
     }
