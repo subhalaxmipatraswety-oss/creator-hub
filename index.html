@@ -360,10 +360,12 @@
       object-fit: cover;
     }
     .fullscreen-photo-viewer video {
-      width: 100vw;
-      max-height: 85vh;
+      width: 90vw;
+      max-height: 80vh;
       object-fit: contain;
       outline: none;
+      border-radius: 12px;
+      background: #000;
     }
     .fullscreen-overlay-bar {
       position: absolute;
@@ -441,7 +443,6 @@
   </style>
 </head>
 <body>
-  <!-- Mobile Header Bar -->
   <header class="mobile-nav-bar">
     <button class="mobile-menu-btn" id="btnMobileMenu">☰</button>
     <div class="brand-header" style="border: none; padding: 0;">
@@ -652,7 +653,7 @@
       console.warn("Firebase notice:", e.message);
     }
 
-    // High Quality Playable MP4 Video Streams for HD Video Playback
+    // Universal High-Compatibility MP4 CDN Video Streams for Cross-Platform Playback
     const defaultData = {
       user: { name: 'Sweety Creator', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', channelName: 'Sweety Studio' },
       videos: [
@@ -661,7 +662,7 @@
           title: 'Amazing Sunset Timelapse',
           subtitle: '2.4K views • 3 days ago',
           thumbnail: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=400&q=80',
-          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
           language: 'Hindi', langCode: 'HI', category: 'Vlogs', publishedDate: 'Dec 15, 2024', views: 2456, earnings: 18.42, visibility: 'Public'
         },
         {
@@ -669,7 +670,7 @@
           title: 'Street Food Tour',
           subtitle: '5.1K views • 1 week ago',
           thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
-          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
           language: 'Tamil', langCode: 'TA', category: 'Food', publishedDate: 'Dec 10, 2024', views: 5123, earnings: 38.42, visibility: 'Public'
         },
         {
@@ -677,7 +678,7 @@
           title: 'Pro Gaming Setup 2024',
           subtitle: '12K views • 2 weeks ago',
           thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80',
-          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+          videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
           language: 'English', langCode: 'EN', category: 'Gaming', publishedDate: 'Dec 01, 2024', views: 12450, earnings: 94.20, visibility: 'Public'
         }
       ],
@@ -837,10 +838,8 @@
 
     function playVideoById(vidId) {
       const vid = localStore.videos.find(v => v.id === vidId);
-      if (vid) {
-        const playUrl = vid.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
-        openFullscreenMedia('video', vid.title, playUrl);
-      }
+      const playUrl = (vid && vid.videoUrl) ? vid.videoUrl : 'https://vjs.zencdn.net/v/oceans.mp4';
+      openFullscreenMedia('video', vid ? vid.title : 'Video Playback', playUrl);
     }
 
     function renderGalleryView(container) {
@@ -888,12 +887,25 @@
       const viewer = document.getElementById('fullscreenViewer');
       const wrapper = document.getElementById('fullscreenMediaWrapper');
       document.getElementById('fullscreenCaptionTxt').innerText = title || 'Full Screen View';
+      
       if (type === 'video') {
-        wrapper.innerHTML = `<video controls autoplay playsinline src="${url}" style="width: 100vw; max-height: 85vh; object-fit: contain;"></video>`;
+        wrapper.innerHTML = `
+          <video id="activeFullscreenVideo" controls playsinline preload="auto" style="width: 90vw; max-height: 80vh; border-radius: 12px; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,0.9);">
+            <source src="${url}" type="video/mp4">
+            Your browser does not support HTML5 video playback.
+          </video>
+        `;
+        viewer.classList.add('active');
+        setTimeout(() => {
+          const v = document.getElementById('activeFullscreenVideo');
+          if (v) {
+            v.play().catch(err => console.log('Autoplay info:', err.message));
+          }
+        }, 100);
       } else {
         wrapper.innerHTML = `<img src="${url}" alt="${title}">`;
+        viewer.classList.add('active');
       }
-      viewer.classList.add('active');
     }
 
     function renderLanguagesView(container) { container.innerHTML = `<div class="content-card"><h2>Multi-Language Analytics</h2></div>`; }
@@ -972,7 +984,7 @@
             saveSamplePhoto(title);
           }
         } else {
-          let vidUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+          let vidUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
           if (file) {
             vidUrl = URL.createObjectURL(file);
           }
