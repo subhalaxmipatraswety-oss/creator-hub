@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CreatorHub - All-in-One Creator Dashboard</title>
   <meta name="description" content="All-in-one social media dashboard for video creators, analytics, photo gallery, real-time chat, and WebRTC calls.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
@@ -16,7 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* CreatorHub Master CSS Stylesheet - Premium Dark Theme */
+    /* CreatorHub Master CSS Stylesheet - Mobile First Responsive Dark Theme */
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
     :root {
@@ -71,6 +71,28 @@
       margin: 0 auto;
     }
 
+    .mobile-nav-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--bg-card-border);
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+
+    .mobile-menu-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
     .sidebar {
       width: 270px;
       background: var(--bg-card);
@@ -82,6 +104,7 @@
       gap: 16px;
       flex-shrink: 0;
       box-shadow: var(--shadow-card);
+      transition: transform 0.3s ease;
     }
 
     .brand-header {
@@ -182,10 +205,11 @@
       border-radius: var(--radius-lg);
       padding: 12px 20px;
       box-shadow: var(--shadow-card);
+      flex-wrap: wrap;
     }
 
     .page-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
-    .top-bar-actions { display: flex; align-items: center; gap: 12px; }
+    .top-bar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
     .search-box { position: relative; display: flex; align-items: center; }
     .search-box input {
@@ -196,10 +220,10 @@
       color: #fff;
       font-size: 0.85rem;
       outline: none;
-      width: 220px;
+      width: 180px;
       transition: all 0.2s;
     }
-    .search-box input:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); width: 260px; }
+    .search-box input:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); width: 220px; }
     .search-box svg { position: absolute; left: 12px; width: 16px; height: 16px; color: var(--text-muted); }
 
     .btn {
@@ -207,7 +231,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 9px 18px;
+      padding: 9px 16px;
       border-radius: var(--radius-md);
       font-size: 0.85rem;
       font-weight: 700;
@@ -215,6 +239,7 @@
       border: none;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       user-select: none;
+      white-space: nowrap;
     }
 
     .btn-primary { background: var(--gradient-btn); color: #ffffff; box-shadow: var(--shadow-glow-blue); }
@@ -260,23 +285,22 @@
       box-shadow: var(--shadow-card);
     }
 
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 10px; flex-wrap: wrap; }
     .card-header-left { display: flex; align-items: center; gap: 10px; }
     .card-title { font-size: 1.1rem; font-weight: 800; }
 
-    .table-responsive { width: 100%; overflow-x: auto; }
-    .custom-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; text-align: left; }
+    .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .custom-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; text-align: left; min-width: 550px; }
     .custom-table th { padding: 10px 14px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     .custom-table td { padding: 12px 14px; background: rgba(255, 255, 255, 0.02); font-size: 0.85rem; font-weight: 600; }
     .custom-table tr td:first-child { border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); }
     .custom-table tr td:last-child { border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
-    .custom-table tr:hover td { background: rgba(255, 255, 255, 0.05); }
 
-    .video-cell { display: flex; align-items: center; gap: 12px; min-width: 260px; }
-    .video-thumb { width: 72px; height: 44px; border-radius: 6px; object-fit: cover; background: #1e293b; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; }
+    .video-cell { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+    .video-thumb { width: 68px; height: 42px; border-radius: 6px; object-fit: cover; background: #1e293b; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, 0.1); cursor: pointer; }
     .video-meta-info { display: flex; flex-direction: column; }
-    .video-title { font-weight: 700; font-size: 0.9rem; color: var(--text-main); line-height: 1.3; }
-    .video-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .video-title { font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.3; }
+    .video-sub { font-size: 0.73rem; color: var(--text-muted); margin-top: 2px; }
 
     .lang-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 700; }
     .lang-badge.hindi { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
@@ -288,31 +312,29 @@
     .visibility-badge.public { background: rgba(37, 99, 235, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
     .visibility-badge.private { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
 
-    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .photo-card { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); border: 1px solid var(--bg-card-border); aspect-ratio: 4/3; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-    .photo-card:hover img { transform: scale(1.05); }
-    .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; }
-    .photo-card:hover .photo-overlay { opacity: 1; }
-    .photo-caption { font-size: 0.88rem; font-weight: 700; color: #fff; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .photo-card { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); border: 1px solid var(--bg-card-border); aspect-ratio: 4/3; cursor: pointer; }
+    .photo-card img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; }
+    .photo-card:hover .photo-overlay, .photo-card:active .photo-overlay { opacity: 1; }
+    .photo-caption { font-size: 0.82rem; font-weight: 700; color: #fff; }
 
-    /* Modals & 100% Screen Edge-to-Edge Cover Photo Viewer */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    /* Modals & Full Screen Photo & Video Player Overlay */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
-    .modal-content { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); transform: translateY(10px); transition: transform 0.25s ease; }
+    .modal-content { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); transform: translateY(10px); transition: transform 0.25s ease; }
     .modal-backdrop.active .modal-content { transform: translateY(0); }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .modal-title { font-size: 1.2rem; font-weight: 800; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-title { font-size: 1.15rem; font-weight: 800; }
     .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 1.5rem; line-height: 1; }
     .close-btn:hover { color: #fff; }
 
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
     .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
     .form-control { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: var(--radius-md); color: #fff; font-size: 0.88rem; outline: none; font-family: inherit; }
     .form-control:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); }
 
-    /* Absolute 100% Screen Window Edge-to-Edge Cover Viewer */
+    /* Absolute 100% Screen Window Edge-to-Edge Cover Video/Photo Player */
     .fullscreen-photo-viewer {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -335,12 +357,13 @@
     .fullscreen-photo-viewer img {
       width: 100vw;
       height: 100vh;
-      object-fit: cover; /* Covers 100% of screen window edge to edge */
+      object-fit: cover;
     }
     .fullscreen-photo-viewer video {
       width: 100vw;
-      height: 100vh;
+      max-height: 85vh;
       object-fit: contain;
+      outline: none;
     }
     .fullscreen-overlay-bar {
       position: absolute;
@@ -348,37 +371,34 @@
       left: 0;
       right: 0;
       background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-      padding: 30px 40px;
+      padding: 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 1000000;
     }
     .fullscreen-caption {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: #ffffff;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
     .fullscreen-close-btn {
       position: absolute;
-      top: 24px;
-      right: 28px;
-      background: rgba(0, 0, 0, 0.6);
+      top: 16px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.4);
       color: #ffffff;
-      font-size: 2.2rem;
-      width: 56px;
-      height: 56px;
+      font-size: 2rem;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000001;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.8);
     }
-    .fullscreen-close-btn:hover { background: #ef4444; border-color: #ef4444; }
 
     .call-overlay { position: fixed; inset: 0; background: #090d16; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .call-video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 90%; max-width: 1000px; height: 60vh; }
@@ -388,21 +408,60 @@
     .btn-call-ctrl { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; background: rgba(255, 255, 255, 0.15); color: #fff; }
     .btn-call-ctrl.end-call { background: #ef4444; }
 
-    @media (max-width: 1024px) { .app-layout { flex-direction: column; } .sidebar { width: 100%; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } .call-video-grid { grid-template-columns: 1fr; height: 70vh; } }
+    /* Mobile Responsive Breakpoints */
+    @media (max-width: 868px) {
+      .app-layout { padding: 10px; flex-direction: column; gap: 14px; }
+      .mobile-nav-bar { display: flex; }
+      .sidebar {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        z-index: 2000;
+        width: 280px;
+        border-radius: 0;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+      }
+      .sidebar.mobile-open { display: flex; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .stat-card { padding: 14px; }
+      .stat-value { font-size: 1.4rem; }
+      .top-bar { padding: 12px 14px; }
+      .page-title { font-size: 1.15rem; }
+      .search-box input { width: 140px; }
+      .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .top-bar-actions { width: 100%; justify-content: space-between; margin-top: 8px; }
+      .search-box { flex: 1; }
+      .search-box input { width: 100%; }
+      .btn { padding: 8px 12px; font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
+  <!-- Mobile Header Bar -->
+  <header class="mobile-nav-bar">
+    <button class="mobile-menu-btn" id="btnMobileMenu">☰</button>
+    <div class="brand-header" style="border: none; padding: 0;">
+      <div class="brand-logo" style="width: 30px; height: 30px; font-size: 0.95rem;">C</div>
+      <div class="brand-name" style="font-size: 1.1rem;">CreatorHub</div>
+    </div>
+    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.78rem;" onclick="openModal('photo')">+ Upload</button>
+  </header>
+
   <div class="app-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="mainSidebar">
       <div class="brand-header">
         <div class="brand-logo">C</div>
         <div class="brand-name">CreatorHub</div>
+        <button class="close-btn" id="btnCloseSidebar" style="display: none; margin-left: auto;">&times;</button>
       </div>
 
       <nav class="nav-section">
         <a class="nav-item active-overview" data-view="overview">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2h-2a2 2 0 01-2-2v-2z" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
           Overview
         </a>
         <a class="nav-item" data-view="video-folder">
@@ -453,11 +512,6 @@
         <a class="nav-item" id="btnStartVideoCall"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Video Call</a>
         <a class="nav-item" id="btnStartVoiceCall"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>Voice Call</a>
         <a class="nav-item" id="btnUploadToFolder"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>Upload to Folder</a>
-      </nav>
-
-      <nav class="nav-section">
-        <div class="nav-section-title">Settings</div>
-        <a class="nav-item" data-view="settings"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Channel Settings</a>
       </nav>
 
       <div class="user-profile-bar" id="userProfileBtn" onclick="switchView('settings')">
@@ -554,7 +608,7 @@
     <button class="fullscreen-close-btn" id="btnCloseFullscreenViewer" title="Close Fullscreen">&times;</button>
     <div id="fullscreenMediaWrapper" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative;"></div>
     <div class="fullscreen-overlay-bar">
-      <div class="fullscreen-caption" id="fullscreenCaptionTxt">Full Page Photo</div>
+      <div class="fullscreen-caption" id="fullscreenCaptionTxt">Full Page Viewer</div>
     </div>
   </div>
 
@@ -598,11 +652,34 @@
       console.warn("Firebase notice:", e.message);
     }
 
+    // High Quality Playable MP4 Video Streams for HD Video Playback
     const defaultData = {
       user: { name: 'Sweety Creator', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', channelName: 'Sweety Studio' },
       videos: [
-        { id: 'vid-1', title: 'Amazing Sunset Timelapse', subtitle: '2.4K views • 3 days ago', thumbnail: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=400&q=80', language: 'Hindi', langCode: 'HI', category: 'Vlogs', publishedDate: 'Dec 15, 2024', views: 2456, earnings: 18.42, visibility: 'Public' },
-        { id: 'vid-2', title: 'Street Food Tour', subtitle: '5.1K views • 1 week ago', thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80', language: 'Tamil', langCode: 'TA', category: 'Food', publishedDate: 'Dec 10, 2024', views: 5123, earnings: 38.42, visibility: 'Public' }
+        {
+          id: 'vid-1',
+          title: 'Amazing Sunset Timelapse',
+          subtitle: '2.4K views • 3 days ago',
+          thumbnail: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          language: 'Hindi', langCode: 'HI', category: 'Vlogs', publishedDate: 'Dec 15, 2024', views: 2456, earnings: 18.42, visibility: 'Public'
+        },
+        {
+          id: 'vid-2',
+          title: 'Street Food Tour',
+          subtitle: '5.1K views • 1 week ago',
+          thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          language: 'Tamil', langCode: 'TA', category: 'Food', publishedDate: 'Dec 10, 2024', views: 5123, earnings: 38.42, visibility: 'Public'
+        },
+        {
+          id: 'vid-3',
+          title: 'Pro Gaming Setup 2024',
+          subtitle: '12K views • 2 weeks ago',
+          thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+          language: 'English', langCode: 'EN', category: 'Gaming', publishedDate: 'Dec 01, 2024', views: 12450, earnings: 94.20, visibility: 'Public'
+        }
       ],
       photos: [
         { id: 'ph-1', title: 'Studio Lighting Setup', url: 'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?auto=format&fit=crop&w=600&q=80', uploadedAt: '2024-12-14' },
@@ -644,13 +721,34 @@
       bindNavEvents();
       bindModals();
       bindGlobalPhotoClick();
+      bindMobileDrawer();
       switchView('overview');
     });
+
+    function bindMobileDrawer() {
+      const btnMenu = document.getElementById('btnMobileMenu');
+      const sidebar = document.getElementById('mainSidebar');
+      const btnClose = document.getElementById('btnCloseSidebar');
+
+      if (btnMenu && sidebar) {
+        btnMenu.onclick = () => {
+          sidebar.classList.add('mobile-open');
+          if (btnClose) btnClose.style.display = 'block';
+        };
+      }
+      if (btnClose && sidebar) {
+        btnClose.onclick = () => {
+          sidebar.classList.remove('mobile-open');
+        };
+      }
+    }
 
     function bindNavEvents() {
       document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
+          const sidebar = document.getElementById('mainSidebar');
+          if (sidebar) sidebar.classList.remove('mobile-open');
           switchView(item.getAttribute('data-view'));
         });
       });
@@ -714,7 +812,7 @@
           <div class="stat-card"><div class="stat-card-header"><div class="stat-icon green">🌐</div><span class="stat-title">Languages</span></div><div class="stat-value">9</div><span class="stat-badge neutral">All Indian languages</span></div>
         </div>
 
-        <div class="content-card" style="margin-top: 20px;">
+        <div class="content-card" style="margin-top: 16px;">
           <div class="card-header"><h2 class="card-title">Recent Videos</h2><button class="btn btn-primary" onclick="openModal('video')">Upload New +</button></div>
           <div class="table-responsive">
             <table class="custom-table">
@@ -722,7 +820,7 @@
               <tbody>
                 ${localStore.videos.map(v => `
                   <tr>
-                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}" onclick="openFullscreenMedia('video', '${v.title}', '${v.thumbnail}')"><div class="video-meta-info"><div class="video-title">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
+                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}" onclick="playVideoById('${v.id}')"><div class="video-meta-info"><div class="video-title" style="cursor:pointer;" onclick="playVideoById('${v.id}')">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
                     <td><span class="lang-badge ${v.language.toLowerCase()}">${v.langCode} ${v.language}</span></td>
                     <td>${v.publishedDate}</td>
                     <td>${v.views.toLocaleString()}</td>
@@ -737,10 +835,18 @@
       `;
     }
 
+    function playVideoById(vidId) {
+      const vid = localStore.videos.find(v => v.id === vidId);
+      if (vid) {
+        const playUrl = vid.videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+        openFullscreenMedia('video', vid.title, playUrl);
+      }
+    }
+
     function renderGalleryView(container) {
       container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="font-weight: 800; font-size: 1.2rem;">Photo Gallery (${localStore.photos.length} Photos)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="font-weight: 800; font-size: 1.15rem;">Photo Gallery (${localStore.photos.length} Photos)</h2>
           <button class="btn btn-primary" onclick="openModal('photo')">Upload Photo +</button>
         </div>
         <div class="photo-grid">
@@ -749,7 +855,7 @@
               <img src="${p.url}" alt="${p.title}">
               <div class="photo-overlay">
                 <div class="photo-caption">${p.title}</div>
-                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt} • Click for 100% full screen</div>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt}</div>
               </div>
             </div>
           `).join('')}
@@ -759,16 +865,19 @@
 
     function renderVideoFolderView(container) {
       container.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="font-weight: 800; font-size: 1.2rem;">Video Folder (${localStore.videos.length} items)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <h2 style="font-weight: 800; font-size: 1.15rem;">Video Folder (${localStore.videos.length} items)</h2>
           <button class="btn btn-orange" onclick="openModal('video')">Upload Video to Folder</button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
           ${localStore.videos.map(v => `
-            <div class="content-card" style="padding: 14px; cursor: pointer;" onclick="openFullscreenMedia('video', '${v.title}', '${v.thumbnail}')">
-              <img src="${v.thumbnail}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
-              <h3 style="font-size: 0.95rem; font-weight: 700;">${v.title}</h3>
-              <div style="font-size: 0.78rem; color: var(--text-muted);">${v.views.toLocaleString()} views • $${v.earnings.toFixed(2)}</div>
+            <div class="content-card" style="padding: 12px; cursor: pointer;" onclick="playVideoById('${v.id}')">
+              <div style="position: relative;">
+                <img src="${v.thumbnail}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
+                <span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: rgba(0,0,0,0.35); border-radius: 8px; color: #fff;">▶</span>
+              </div>
+              <h3 style="font-size: 0.9rem; font-weight: 700;">${v.title}</h3>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${v.views.toLocaleString()} views • $${v.earnings.toFixed(2)}</div>
             </div>
           `).join('')}
         </div>
@@ -778,9 +887,9 @@
     function openFullscreenMedia(type, title, url) {
       const viewer = document.getElementById('fullscreenViewer');
       const wrapper = document.getElementById('fullscreenMediaWrapper');
-      document.getElementById('fullscreenCaptionTxt').innerText = title || 'Full Screen Cover View';
+      document.getElementById('fullscreenCaptionTxt').innerText = title || 'Full Screen View';
       if (type === 'video') {
-        wrapper.innerHTML = `<video controls autoplay src="${url}"></video>`;
+        wrapper.innerHTML = `<video controls autoplay playsinline src="${url}" style="width: 100vw; max-height: 85vh; object-fit: contain;"></video>`;
       } else {
         wrapper.innerHTML = `<img src="${url}" alt="${title}">`;
       }
@@ -801,8 +910,16 @@
 
       document.getElementById('btnCloseUploadModal').onclick = () => uploadModal.classList.remove('active');
       document.getElementById('btnCloseFirebaseModal').onclick = () => firebaseModal.classList.remove('active');
-      document.getElementById('btnCloseFullscreenViewer').onclick = () => { viewer.classList.remove('active'); document.getElementById('fullscreenMediaWrapper').innerHTML = ''; };
-      viewer.onclick = (e) => { if (e.target === viewer || e.target.classList.contains('fullscreen-close-btn')) { viewer.classList.remove('active'); document.getElementById('fullscreenMediaWrapper').innerHTML = ''; } };
+      document.getElementById('btnCloseFullscreenViewer').onclick = () => {
+        viewer.classList.remove('active');
+        document.getElementById('fullscreenMediaWrapper').innerHTML = '';
+      };
+      viewer.onclick = (e) => {
+        if (e.target === viewer || e.target.classList.contains('fullscreen-close-btn')) {
+          viewer.classList.remove('active');
+          document.getElementById('fullscreenMediaWrapper').innerHTML = '';
+        }
+      };
 
       document.getElementById('btnFirebaseConfig').onclick = () => firebaseModal.classList.add('active');
 
@@ -855,11 +972,16 @@
             saveSamplePhoto(title);
           }
         } else {
+          let vidUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+          if (file) {
+            vidUrl = URL.createObjectURL(file);
+          }
           const videoRecord = {
             id: 'vid-' + Date.now(),
             title: title || 'Uploaded Video',
             subtitle: '100 views • Just now',
             thumbnail: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80',
+            videoUrl: vidUrl,
             language: document.getElementById('uploadLanguageSelect').value || 'English',
             langCode: 'EN',
             category: 'Vlogs',
