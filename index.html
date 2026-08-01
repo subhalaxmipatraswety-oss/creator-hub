@@ -297,7 +297,7 @@
     .photo-card:hover .photo-overlay { opacity: 1; }
     .photo-caption { font-size: 0.88rem; font-weight: 700; color: #fff; }
 
-    /* Modals & Lightbox */
+    /* Modals & Full Page Photo Viewer */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
     .modal-content { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); transform: translateY(10px); transition: transform 0.25s ease; }
@@ -311,6 +311,63 @@
     .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
     .form-control { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: var(--radius-md); color: #fff; font-size: 0.88rem; outline: none; font-family: inherit; }
     .form-control:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); }
+
+    /* 100% Full Page Photo & Video Screen Viewer */
+    .fullscreen-photo-viewer {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.96);
+      backdrop-filter: blur(15px);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .fullscreen-photo-viewer.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .fullscreen-photo-viewer img, .fullscreen-photo-viewer video {
+      max-width: 95vw;
+      max-height: 88vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .fullscreen-caption {
+      margin-top: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+    .fullscreen-close-btn {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-size: 2rem;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100000;
+      transition: background 0.2s;
+    }
+    .fullscreen-close-btn:hover {
+      background: rgba(239, 68, 68, 0.8);
+    }
 
     .call-overlay { position: fixed; inset: 0; background: #090d16; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .call-video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 90%; max-width: 1000px; height: 60vh; }
@@ -424,7 +481,7 @@
     </main>
   </div>
 
-  <!-- Modals & Lightbox -->
+  <!-- Modals -->
   <div class="modal-backdrop" id="uploadModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -482,15 +539,10 @@
     </div>
   </div>
 
-  <!-- Media Player & Image Lightbox Modal -->
-  <div class="modal-backdrop" id="mediaPlayerModal">
-    <div class="modal-content" style="max-width: 800px; padding: 20px; text-align: center;">
-      <div class="modal-header" style="margin-bottom: 14px;">
-        <h3 class="modal-title" id="mediaModalTitle">Preview Content</h3>
-        <button class="close-btn" id="btnCloseMediaModal">&times;</button>
-      </div>
-      <div id="mediaModalContent" style="width: 100%; min-height: 350px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px;"></div>
-    </div>
+  <!-- 100% Full-Screen / Full-Page Media Lightbox Overlay -->
+  <div class="fullscreen-photo-viewer" id="fullscreenViewer">
+    <button class="fullscreen-close-btn" id="btnCloseFullscreenViewer" title="Close Fullscreen">&times;</button>
+    <div id="fullscreenMediaWrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;"></div>
   </div>
 
   <div class="call-overlay" id="callOverlay" style="display: none;">
@@ -604,10 +656,10 @@
           const photoId = photoCard.getAttribute('data-photo-id');
           const photo = localStore.photos.find(p => p.id === photoId);
           if (photo) {
-            openMediaLightbox('image', photo.title, photo.url);
+            openFullscreenMedia('image', photo.title, photo.url);
           } else {
             const img = photoCard.querySelector('img');
-            if (img && img.src) openMediaLightbox('image', 'Expanded Photo', img.src);
+            if (img && img.src) openFullscreenMedia('image', 'Expanded Photo', img.src);
           }
         }
       });
@@ -657,7 +709,7 @@
               <tbody>
                 ${localStore.videos.map(v => `
                   <tr>
-                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}" onclick="openMediaLightbox('video', 'Video Preview', '${v.thumbnail}')"><div class="video-meta-info"><div class="video-title">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
+                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}" onclick="openFullscreenMedia('video', '${v.title}', '${v.thumbnail}')"><div class="video-meta-info"><div class="video-title">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
                     <td><span class="lang-badge ${v.language.toLowerCase()}">${v.langCode} ${v.language}</span></td>
                     <td>${v.publishedDate}</td>
                     <td>${v.views.toLocaleString()}</td>
@@ -684,7 +736,7 @@
               <img src="${p.url}" alt="${p.title}">
               <div class="photo-overlay">
                 <div class="photo-caption">${p.title}</div>
-                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt} • Click to expand</div>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt} • Click for 100% full screen</div>
               </div>
             </div>
           `).join('')}
@@ -700,7 +752,7 @@
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
           ${localStore.videos.map(v => `
-            <div class="content-card" style="padding: 14px; cursor: pointer;" onclick="openMediaLightbox('video', 'Video Preview', '${v.thumbnail}')">
+            <div class="content-card" style="padding: 14px; cursor: pointer;" onclick="openFullscreenMedia('video', '${v.title}', '${v.thumbnail}')">
               <img src="${v.thumbnail}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
               <h3 style="font-size: 0.95rem; font-weight: 700;">${v.title}</h3>
               <div style="font-size: 0.78rem; color: var(--text-muted);">${v.views.toLocaleString()} views • $${v.earnings.toFixed(2)}</div>
@@ -710,16 +762,15 @@
       `;
     }
 
-    function openMediaLightbox(type, title, url) {
-      const modal = document.getElementById('mediaPlayerModal');
-      document.getElementById('mediaModalTitle').innerText = title;
-      const content = document.getElementById('mediaModalContent');
+    function openFullscreenMedia(type, title, url) {
+      const viewer = document.getElementById('fullscreenViewer');
+      const wrapper = document.getElementById('fullscreenMediaWrapper');
       if (type === 'video') {
-        content.innerHTML = `<video controls autoplay src="${url}" style="max-width: 100%; max-height: 500px; border-radius: 8px;"></video>`;
+        wrapper.innerHTML = `<video controls autoplay src="${url}"></video><div class="fullscreen-caption">${title}</div>`;
       } else {
-        content.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 550px; border-radius: 12px; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">`;
+        wrapper.innerHTML = `<img src="${url}" alt="${title}"><div class="fullscreen-caption">${title}</div>`;
       }
-      modal.classList.add('active');
+      viewer.classList.add('active');
     }
 
     function renderLanguagesView(container) { container.innerHTML = `<div class="content-card"><h2>Multi-Language Analytics</h2></div>`; }
@@ -732,12 +783,12 @@
     function bindModals() {
       const uploadModal = document.getElementById('uploadModal');
       const firebaseModal = document.getElementById('firebaseModal');
-      const mediaModal = document.getElementById('mediaPlayerModal');
+      const viewer = document.getElementById('fullscreenViewer');
 
       document.getElementById('btnCloseUploadModal').onclick = () => uploadModal.classList.remove('active');
       document.getElementById('btnCloseFirebaseModal').onclick = () => firebaseModal.classList.remove('active');
-      document.getElementById('btnCloseMediaModal').onclick = () => { mediaModal.classList.remove('active'); document.getElementById('mediaModalContent').innerHTML = ''; };
-      mediaModal.onclick = (e) => { if (e.target === mediaModal) { mediaModal.classList.remove('active'); document.getElementById('mediaModalContent').innerHTML = ''; } };
+      document.getElementById('btnCloseFullscreenViewer').onclick = () => { viewer.classList.remove('active'); document.getElementById('fullscreenMediaWrapper').innerHTML = ''; };
+      viewer.onclick = (e) => { if (e.target === viewer || e.target.classList.contains('fullscreen-close-btn')) { viewer.classList.remove('active'); document.getElementById('fullscreenMediaWrapper').innerHTML = ''; } };
 
       document.getElementById('btnFirebaseConfig').onclick = () => firebaseModal.classList.add('active');
 
