@@ -289,21 +289,23 @@
     .visibility-badge.private { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
 
     .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .photo-card { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); border: 1px solid var(--bg-card-border); aspect-ratio: 4/3; cursor: pointer; }
+    .photo-card { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); border: 1px solid var(--bg-card-border); aspect-ratio: 4/3; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     .photo-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
     .photo-card:hover img { transform: scale(1.05); }
-    .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; }
+    .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; }
     .photo-card:hover .photo-overlay { opacity: 1; }
-    .photo-caption { font-size: 0.85rem; font-weight: 700; color: #fff; }
+    .photo-caption { font-size: 0.88rem; font-weight: 700; color: #fff; }
 
-    /* Modals */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    /* Modals & Lightbox */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
     .modal-backdrop.active { opacity: 1; pointer-events: auto; }
-    .modal-content { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); transform: translateY(10px); transition: transform 0.2s ease; }
+    .modal-content { background: var(--bg-card); border: 1px solid var(--bg-card-border); border-radius: var(--radius-lg); width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); transform: translateY(10px); transition: transform 0.25s ease; }
     .modal-backdrop.active .modal-content { transform: translateY(0); }
     .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .modal-title { font-size: 1.2rem; font-weight: 800; }
-    .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; font-size: 1.2rem; }
+    .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px 8px; font-size: 1.5rem; line-height: 1; }
+    .close-btn:hover { color: #fff; }
 
     .form-group { margin-bottom: 16px; }
     .form-label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
@@ -422,7 +424,7 @@
     </main>
   </div>
 
-  <!-- Modals -->
+  <!-- Modals & Lightbox -->
   <div class="modal-backdrop" id="uploadModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -480,6 +482,17 @@
     </div>
   </div>
 
+  <!-- Media Player & Image Lightbox Modal -->
+  <div class="modal-backdrop" id="mediaPlayerModal">
+    <div class="modal-content" style="max-width: 800px; padding: 20px; text-align: center;">
+      <div class="modal-header" style="margin-bottom: 14px;">
+        <h3 class="modal-title" id="mediaModalTitle">Preview Content</h3>
+        <button class="close-btn" id="btnCloseMediaModal">&times;</button>
+      </div>
+      <div id="mediaModalContent" style="width: 100%; min-height: 350px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px;"></div>
+    </div>
+  </div>
+
   <div class="call-overlay" id="callOverlay" style="display: none;">
     <h2 id="callOverlayTitle" style="color: #fff; margin-bottom: 20px; font-weight: 800;">1-on-1 Video Call</h2>
     <div class="call-video-grid">
@@ -498,7 +511,6 @@
     </div>
   </div>
 
-  <!-- Bulletproof Real-Time Multi-Device Sync Engine -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCoGucYq4jdIYu3xaY6xNdcEdahzI83lDo",
@@ -628,7 +640,7 @@
               <tbody>
                 ${localStore.videos.map(v => `
                   <tr>
-                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}"><div class="video-meta-info"><div class="video-title">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
+                    <td><div class="video-cell"><img class="video-thumb" src="${v.thumbnail}" onclick="openMediaLightbox('video', '${v.title.replace(/'/g, "\\'")}', '${v.thumbnail}')"><div class="video-meta-info"><div class="video-title">${v.title}</div><div class="video-sub">${v.subtitle}</div></div></div></td>
                     <td><span class="lang-badge ${v.language.toLowerCase()}">${v.langCode} ${v.language}</span></td>
                     <td>${v.publishedDate}</td>
                     <td>${v.views.toLocaleString()}</td>
@@ -651,11 +663,11 @@
         </div>
         <div class="photo-grid">
           ${localStore.photos.map(p => `
-            <div class="photo-card">
+            <div class="photo-card" onclick="openMediaLightbox('image', '${p.title.replace(/'/g, "\\'")}', '${p.url}')">
               <img src="${p.url}" alt="${p.title}">
               <div class="photo-overlay">
                 <div class="photo-caption">${p.title}</div>
-                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt}</div>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Uploaded ${p.uploadedAt} • Click to expand</div>
               </div>
             </div>
           `).join('')}
@@ -671,7 +683,7 @@
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
           ${localStore.videos.map(v => `
-            <div class="content-card" style="padding: 14px;">
+            <div class="content-card" style="padding: 14px; cursor: pointer;" onclick="openMediaLightbox('video', '${v.title.replace(/'/g, "\\'")}', '${v.thumbnail}')">
               <img src="${v.thumbnail}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;">
               <h3 style="font-size: 0.95rem; font-weight: 700;">${v.title}</h3>
               <div style="font-size: 0.78rem; color: var(--text-muted);">${v.views.toLocaleString()} views • $${v.earnings.toFixed(2)}</div>
@@ -679,6 +691,18 @@
           `).join('')}
         </div>
       `;
+    }
+
+    function openMediaLightbox(type, title, url) {
+      const modal = document.getElementById('mediaPlayerModal');
+      document.getElementById('mediaModalTitle').innerText = title;
+      const content = document.getElementById('mediaModalContent');
+      if (type === 'video') {
+        content.innerHTML = `<video controls autoplay src="${url}" style="max-width: 100%; max-height: 500px; border-radius: 8px;"></video>`;
+      } else {
+        content.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 550px; border-radius: 12px; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">`;
+      }
+      modal.classList.add('active');
     }
 
     function renderLanguagesView(container) { container.innerHTML = `<div class="content-card"><h2>Multi-Language Analytics</h2></div>`; }
@@ -691,9 +715,13 @@
     function bindModals() {
       const uploadModal = document.getElementById('uploadModal');
       const firebaseModal = document.getElementById('firebaseModal');
+      const mediaModal = document.getElementById('mediaPlayerModal');
 
       document.getElementById('btnCloseUploadModal').onclick = () => uploadModal.classList.remove('active');
       document.getElementById('btnCloseFirebaseModal').onclick = () => firebaseModal.classList.remove('active');
+      document.getElementById('btnCloseMediaModal').onclick = () => { mediaModal.classList.remove('active'); document.getElementById('mediaModalContent').innerHTML = ''; };
+      mediaModal.onclick = (e) => { if (e.target === mediaModal) { mediaModal.classList.remove('active'); document.getElementById('mediaModalContent').innerHTML = ''; } };
+
       document.getElementById('btnFirebaseConfig').onclick = () => firebaseModal.classList.add('active');
 
       document.getElementById('uploadForm').onsubmit = (e) => {
@@ -704,7 +732,6 @@
         const fileInput = document.getElementById('uploadFileInput');
         const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
 
-        // Close modal immediately so UI never hangs!
         uploadModal.classList.remove('active');
 
         if (type === 'photo') {
