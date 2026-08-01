@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>CreatorHub - All-in-One Creator Dashboard</title>
   <meta name="description" content="All-in-one social media dashboard for video creators, analytics, photo gallery, real-time chat, and WebRTC calls.">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
@@ -334,13 +334,13 @@
     .form-control { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: var(--radius-md); color: #fff; font-size: 0.88rem; outline: none; font-family: inherit; }
     .form-control:focus { border-color: var(--accent-blue); background: rgba(255, 255, 255, 0.08); }
 
-    /* Absolute 100% Screen Window Viewer for Mobile & Desktop */
+    /* Absolute 100% Screen Window Viewer for Mobile & Desktop with Touch Zoom */
     .fullscreen-photo-viewer {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.95);
+      background: rgba(0, 0, 0, 0.96);
       backdrop-filter: blur(15px);
       z-index: 999999;
       display: flex;
@@ -350,6 +350,7 @@
       pointer-events: none;
       transition: opacity 0.2s ease;
       overflow: hidden;
+      touch-action: manipulation;
     }
     .fullscreen-photo-viewer.active {
       opacity: 1;
@@ -357,11 +358,13 @@
     }
     .fullscreen-photo-viewer img {
       max-width: 95vw;
-      max-height: 84vh;
+      max-height: 82vh;
       object-fit: contain;
       border-radius: 12px;
       box-shadow: 0 10px 50px rgba(0, 0, 0, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+      cursor: zoom-in;
     }
     .fullscreen-overlay-bar {
       position: absolute;
@@ -369,14 +372,16 @@
       left: 0;
       right: 0;
       background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
-      padding: 18px 24px;
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       z-index: 1000000;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .fullscreen-caption {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       color: #ffffff;
     }
@@ -644,12 +649,17 @@
     </div>
   </div>
 
-  <!-- Full Screen Photo & Video Viewer Overlay -->
+  <!-- Full Screen Photo & Video Viewer Overlay with Interactive Zoom -->
   <div class="fullscreen-photo-viewer" id="fullscreenViewer">
     <button class="fullscreen-close-btn" id="btnCloseFullscreenViewer" title="Close Fullscreen">&times;</button>
-    <div id="fullscreenMediaWrapper" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative;"></div>
+    <div id="fullscreenMediaWrapper" style="width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: auto;"></div>
     <div class="fullscreen-overlay-bar">
       <div class="fullscreen-caption" id="fullscreenCaptionTxt">Full Page Viewer</div>
+      <div id="zoomControlBar" style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn btn-secondary" id="btnZoomOut" style="padding: 5px 12px; font-size: 0.85rem;">🔍 -</button>
+        <button class="btn btn-primary" id="btnResetZoom" style="padding: 5px 12px; font-size: 0.8rem;">100% Reset</button>
+        <button class="btn btn-secondary" id="btnZoomIn" style="padding: 5px 12px; font-size: 0.85rem;">🔍 +</button>
+      </div>
     </div>
   </div>
 
@@ -792,15 +802,41 @@
     let currentCall = null;
     let isMicMuted = false;
     let isCamOff = false;
+    let currentPhotoZoom = 1.0;
 
     document.addEventListener('DOMContentLoaded', () => {
       bindNavEvents();
       bindModals();
       bindGlobalPhotoClick();
       bindMobileDrawer();
+      bindZoomEvents();
       initPeerJS();
       switchView('overview');
     });
+
+    function bindZoomEvents() {
+      const btnIn = document.getElementById('btnZoomIn');
+      const btnOut = document.getElementById('btnZoomOut');
+      const btnReset = document.getElementById('btnResetZoom');
+
+      if (btnIn) btnIn.onclick = (e) => { e.stopPropagation(); applyPhotoZoom(0.3); };
+      if (btnOut) btnOut.onclick = (e) => { e.stopPropagation(); applyPhotoZoom(-0.3); };
+      if (btnReset) btnReset.onclick = (e) => { e.stopPropagation(); resetPhotoZoom(); };
+    }
+
+    function applyPhotoZoom(delta) {
+      const img = document.querySelector('#fullscreenMediaWrapper img');
+      if (img) {
+        currentPhotoZoom = Math.min(Math.max(0.5, currentPhotoZoom + delta), 4.0);
+        img.style.transform = `scale(${currentPhotoZoom})`;
+      }
+    }
+
+    function resetPhotoZoom() {
+      const img = document.querySelector('#fullscreenMediaWrapper img');
+      currentPhotoZoom = 1.0;
+      if (img) img.style.transform = `scale(1.0)`;
+    }
 
     function initPeerJS() {
       try {
@@ -990,9 +1026,12 @@
     function openFullscreenMedia(type, title, url) {
       const viewer = document.getElementById('fullscreenViewer');
       const wrapper = document.getElementById('fullscreenMediaWrapper');
+      const zoomBar = document.getElementById('zoomControlBar');
       document.getElementById('fullscreenCaptionTxt').innerText = title || 'Full Page View';
+      resetPhotoZoom();
       
       if (type === 'video') {
+        if (zoomBar) zoomBar.style.display = 'none';
         let playUrl = url;
         if (!playUrl || playUrl.startsWith('blob:') || playUrl.includes('unsplash')) {
           playUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
@@ -1030,8 +1069,18 @@
           }
         }, 150);
       } else {
-        wrapper.innerHTML = `<img src="${url}" alt="${title}" style="max-width: 95vw; max-height: 84vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.15);">`;
+        if (zoomBar) zoomBar.style.display = 'flex';
+        wrapper.innerHTML = `<img id="fullscreenActiveImg" src="${url}" alt="${title}" style="max-width: 95vw; max-height: 82vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.15);">`;
         viewer.classList.add('active');
+
+        const imgEl = document.getElementById('fullscreenActiveImg');
+        if (imgEl) {
+          imgEl.ondblclick = (e) => {
+            e.stopPropagation();
+            if (currentPhotoZoom > 1.2) resetPhotoZoom();
+            else applyPhotoZoom(1.2);
+          };
+        }
       }
     }
 
@@ -1118,11 +1167,13 @@
       document.getElementById('btnCloseFullscreenViewer').onclick = () => {
         viewer.classList.remove('active');
         document.getElementById('fullscreenMediaWrapper').innerHTML = '';
+        resetPhotoZoom();
       };
       viewer.onclick = (e) => {
         if (e.target === viewer || e.target.classList.contains('fullscreen-close-btn')) {
           viewer.classList.remove('active');
           document.getElementById('fullscreenMediaWrapper').innerHTML = '';
+          resetPhotoZoom();
         }
       };
 
