@@ -618,7 +618,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Select File (Photo from Mobile Gallery or Camera)</label>
+          <label class="form-label">Select File (Photo or Video from Device)</label>
           <input type="file" class="form-control" id="uploadFileInput" accept="image/*,video/*">
           <div id="filePreviewBox" style="margin-top: 10px; display: none; text-align: center;">
             <img id="filePreviewImg" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
@@ -732,6 +732,15 @@
       'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80'
     ];
 
+    const sampleVideoPool = [
+      'https://vjs.zencdn.net/v/oceans.mp4',
+      'https://www.w3schools.com/html/mov_bbb.mp4',
+      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4'
+    ];
+
     const defaultData = {
       user: { name: 'Sweety Creator', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', channelName: 'Sweety Studio' },
       videos: [
@@ -758,6 +767,30 @@
           thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80',
           videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
           language: 'English', langCode: 'EN', category: 'Gaming', publishedDate: 'Dec 01, 2024', views: 12450, earnings: 94.20, visibility: 'Public'
+        },
+        {
+          id: 'vid-4',
+          title: 'Mountain Hiking Adventure',
+          subtitle: '8.9K views • 3 weeks ago',
+          thumbnail: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+          language: 'Telugu', langCode: 'TE', category: 'Travel', publishedDate: 'Nov 22, 2024', views: 8900, earnings: 62.10, visibility: 'Public'
+        },
+        {
+          id: 'vid-5',
+          title: 'Tech Unboxing & Review',
+          subtitle: '15.4K views • 1 month ago',
+          thumbnail: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+          language: 'Hindi', langCode: 'HI', category: 'Tech', publishedDate: 'Nov 14, 2024', views: 15400, earnings: 112.50, visibility: 'Public'
+        },
+        {
+          id: 'vid-6',
+          title: 'Wild Nature Safari',
+          subtitle: '22K views • 1 month ago',
+          thumbnail: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=400&q=80',
+          videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+          language: 'English', langCode: 'EN', category: 'Nature', publishedDate: 'Nov 02, 2024', views: 22000, earnings: 175.80, visibility: 'Public'
         }
       ],
       photos: [
@@ -767,6 +800,12 @@
     };
 
     let localStore = JSON.parse(localStorage.getItem('creatorhub_store') || JSON.stringify(defaultData));
+
+    // Force refresh videos if older store with duplicate videos exists
+    if (!localStore.videos || localStore.videos.length < 6) {
+      localStore.videos = defaultData.videos;
+      localStorage.setItem('creatorhub_store', JSON.stringify(localStore));
+    }
 
     function saveStore() {
       localStorage.setItem('creatorhub_store', JSON.stringify(localStore));
@@ -823,16 +862,15 @@
       if (btnOut) btnOut.onclick = (e) => { e.stopPropagation(); applyPhotoZoom(-0.3); };
       if (btnReset) btnReset.onclick = (e) => { e.stopPropagation(); resetPhotoZoom(); };
 
-      // PC Mouse Wheel Zoom Listener
       if (wrapper) {
         wrapper.onwheel = (e) => {
           const img = document.querySelector('#fullscreenMediaWrapper img');
           if (img) {
             e.preventDefault();
             if (e.deltaY < 0) {
-              applyPhotoZoom(0.25); // Scroll Up = Zoom In
+              applyPhotoZoom(0.25);
             } else {
-              applyPhotoZoom(-0.25); // Scroll Down = Zoom Out
+              applyPhotoZoom(-0.25);
             }
           }
         };
@@ -1048,8 +1086,10 @@
       if (type === 'video') {
         if (zoomBar) zoomBar.style.display = 'none';
         let playUrl = url;
-        if (!playUrl || playUrl.startsWith('blob:') || playUrl.includes('unsplash')) {
-          playUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
+        
+        // If playUrl is missing or invalid, pick a random video from the video pool
+        if (!playUrl || playUrl.trim() === '' || playUrl.includes('unsplash')) {
+          playUrl = sampleVideoPool[Math.floor(Math.random() * sampleVideoPool.length)];
         }
 
         wrapper.innerHTML = `
@@ -1261,7 +1301,10 @@
             saveSamplePhoto(title);
           }
         } else {
-          let vidUrl = 'https://vjs.zencdn.net/v/oceans.mp4';
+          let vidUrl = sampleVideoPool[Math.floor(Math.random() * sampleVideoPool.length)];
+          if (file) {
+            vidUrl = URL.createObjectURL(file);
+          }
           const videoRecord = {
             id: 'vid-' + Date.now(),
             title: title || 'Uploaded Video',
